@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="2026 Masters Fantasy Draft Tracker — live snake draft board for Augusta National, April 9–12">
+    <title>2026 Masters Fantasy Draft</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Open+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+
+        :root {
+            --green: #006747;
+            --dark-green: #004d35;
+            --gold: #C9A84C;
+            --light: #f5f0e8;
+            --fade: #e74c3c;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            background: var(--light);
+            color: #1a1a1a;
+            min-height: 100vh;
+        }
+
+        .header {
+            background: var(--green);
+            color: white;
+            text-align: center;
+            padding: 28px 20px 20px;
+            border-bottom: 4px solid var(--gold);
+        }
+
+        .header h1 {
+            font-family: 'Playfair Display', serif;
+            font-size: 2.4rem;
+            letter-spacing: 4px;
+            color: var(--gold);
+            text-transform: uppercase;
+        }
+
+        .header p {
+            font-size: 0.82rem;
+            opacity: 0.75;
+            margin-top: 6px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+        }
+
+        .status-bar {
+            background: var(--dark-green);
+            color: white;
+            padding: 14px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 3px solid var(--gold);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .pick-info { display: flex; align-items: center; gap: 14px; }
+
+        .pick-badge {
+            background: var(--gold);
+            color: var(--dark-green);
+            font-family: 'Playfair Display', serif;
+            font-size: 1.6rem;
+            font-weight: 700;
+            width: 54px;
+            height: 54px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .pick-details h2 {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.2rem;
+            color: var(--gold);
+        }
+
+        .pick-details p { font-size: 0.8rem; opacity: 0.75; margin-top: 2px; }
+
+        .progress-bar { height: 3px; background: rgba(255,255,255,0.15); border-radius: 2px; margin-top: 6px; width: 200px; }
+        .progress-fill { height: 100%; background: var(--gold); border-radius: 2px; transition: width 0.3s; }
+
+        .andy-alert {
+            background: var(--gold);
+            color: var(--dark-green);
+            padding: 8px 18px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.88rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: pulse 1.4s infinite;
+        }
+
+        @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.65} }
+
+        .container {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 18px;
+            display: grid;
+            grid-template-columns: 1fr 370px;
+            gap: 18px;
+        }
+
+        .card {
+            background: white;
+            border-radius: 4px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.09);
+            overflow: hidden;
+            margin-bottom: 16px;
+        }
+
+        .card:last-child { margin-bottom: 0; }
+
+        .card-header {
+            background: var(--green);
+            color: white;
+            padding: 11px 16px;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.95rem;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            border-bottom: 2px solid var(--gold);
+        }
+
+        .card-body { padding: 14px; }
+
+        /* Draft board */
+        .draft-board {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 3px;
+        }
+
+        .col-header {
+            text-align: center;
+            padding: 7px 3px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            background: var(--green);
+            color: white;
+            border-radius: 3px 3px 0 0;
+        }
+
+        .col-header.andy { background: var(--gold); color: var(--dark-green); }
+
+        .pick-cell {
+            border: 1px solid #e0e0e0;
+            border-radius: 3px;
+            padding: 5px 3px;
+            min-height: 50px;
+            text-align: center;
+            font-size: 0.68rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            background: #fafafa;
+            transition: all 0.2s;
+        }
+
+        .pick-cell.current { border: 2px solid var(--gold); background: #fffbf0; box-shadow: 0 0 8px rgba(201,168,76,0.35); }
+        .pick-cell.andy-col { border-color: #c3e0d0; background: #f4fbf7; }
+        .pick-cell.andy-col.current { border: 2px solid var(--green); background: #eafaf2; box-shadow: 0 0 8px rgba(0,103,71,0.3); }
+        .pick-cell.filled { background: white; }
+
+        .pnum {
+            font-size: 0.58rem;
+            color: #aaa;
+            position: absolute;
+            top: 2px;
+            left: 3px;
+        }
+
+        .pname { font-weight: 700; font-size: 0.64rem; line-height: 1.2; color: #222; }
+        .podds { font-size: 0.58rem; color: #777; }
+        .now-label { font-size: 0.62rem; font-weight: 700; color: var(--gold); }
+
+        /* Teams */
+        .teams-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+        .team-card { border: 1px solid #e5e5e5; border-radius: 4px; overflow: hidden; }
+
+        .team-hdr {
+            padding: 6px 10px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            background: var(--green);
+            color: white;
+        }
+
+        .team-hdr.andy-team { background: var(--gold); color: var(--dark-green); }
+
+        .team-picks { padding: 6px 10px; min-height: 72px; }
+
+        .team-pick-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.7rem;
+            padding: 2px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+
+        .team-pick-row:last-child { border-bottom: none; }
+        .team-empty { font-size: 0.7rem; color: #ccc; padding: 4px 0; }
+
+        /* Right panel */
+        .rec-box {
+            background: var(--green);
+            color: white;
+            padding: 14px;
+            border-radius: 4px;
+        }
+
+        .rec-title {
+            font-size: 0.68rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--gold);
+            margin-bottom: 8px;
+        }
+
+        .rec-player { font-family: 'Playfair Display', serif; font-size: 1.15rem; font-weight: 700; }
+        .rec-odds { color: var(--gold); font-size: 0.95rem; margin-bottom: 4px; }
+        .rec-reason { font-size: 0.72rem; opacity: 0.82; line-height: 1.4; }
+        .rec-fallback { font-size: 0.72rem; margin-top: 10px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.15); }
+
+        .not-andy { text-align: center; color: #999; font-size: 0.82rem; font-style: italic; padding: 16px 0; }
+        .picks-away { font-size: 0.75rem; color: #888; margin-bottom: 10px; }
+
+        /* Input */
+        .pick-input { display: flex; gap: 8px; margin-top: 10px; }
+
+        .pick-input select {
+            flex: 1;
+            padding: 8px 10px;
+            border: 2px solid var(--green);
+            border-radius: 4px;
+            font-size: 0.82rem;
+            background: white;
+            outline: none;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .btn-pick {
+            background: var(--green);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            font-weight: 700;
+            font-size: 0.82rem;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: background 0.2s;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .btn-pick:hover { background: var(--dark-green); }
+
+        .btn-undo {
+            width: 100%;
+            margin-top: 6px;
+            background: transparent;
+            color: #999;
+            border: 1px solid #ddd;
+            padding: 6px;
+            border-radius: 4px;
+            font-size: 0.74rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-family: 'Open Sans', sans-serif;
+        }
+
+        .btn-undo:hover { background: #f5f5f5; color: #333; }
+
+        /* Player list */
+        .filter-tabs {
+            display: flex;
+            border-bottom: 2px solid #eee;
+            padding: 0 12px;
+        }
+
+        .tab {
+            padding: 8px 12px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            cursor: pointer;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            color: #888;
+            transition: all 0.15s;
+        }
+
+        .tab.active { color: var(--green); border-bottom-color: var(--green); }
+
+        .player-list { max-height: 440px; overflow-y: auto; }
+        .player-list::-webkit-scrollbar { width: 4px; }
+        .player-list::-webkit-scrollbar-thumb { background: var(--green); border-radius: 2px; }
+
+        .p-row {
+            display: flex;
+            align-items: center;
+            padding: 7px 12px;
+            border-bottom: 1px solid #f2f2f2;
+            gap: 8px;
+            transition: background 0.12s;
+        }
+
+        .p-row.clickable { cursor: pointer; }
+        .p-row.clickable:hover { background: #f8f8f8; }
+        .p-row.drafted { opacity: 0.3; }
+        .p-row.andy-target { background: #f0fff8; border-left: 3px solid var(--green); }
+        .p-row.andy-target.clickable:hover { background: #e4fff2; }
+        .p-row.fade { background: #fff5f5; border-left: 3px solid var(--fade); }
+
+        .tier-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+        .t1 { background: #C9A84C; }
+        .t2 { background: #4a90d9; }
+        .t3 { background: #27ae60; }
+        .t4 { background: #9b59b6; }
+        .tf { background: var(--fade); }
+
+        .p-name { flex: 1; }
+        .p-name-main { font-size: 0.82rem; font-weight: 600; }
+        .p-note { font-size: 0.65rem; color: #999; }
+
+        .badge {
+            font-size: 0.58rem;
+            padding: 2px 5px;
+            border-radius: 3px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 700;
+            white-space: nowrap;
+        }
+
+        .badge-andy { background: var(--green); color: white; }
+        .badge-fade { background: var(--fade); color: white; }
+        .badge-inj { background: #e67e22; color: white; }
+        .badge-taken { background: #ddd; color: #666; }
+
+        .p-odds { font-size: 0.78rem; font-weight: 700; color: var(--green); width: 58px; text-align: right; }
+
+        .legend {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            padding: 8px 12px;
+            background: #f9f9f9;
+            border-top: 1px solid #eee;
+            font-size: 0.68rem;
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 4px; color: #666; }
+
+        .complete-banner {
+            background: var(--gold);
+            color: var(--dark-green);
+            text-align: center;
+            padding: 18px;
+            font-family: 'Playfair Display', serif;
+            font-size: 1.3rem;
+            font-weight: 700;
+            width: 100%;
+        }
+
+        .struck { text-decoration: line-through; color: #999; }
+
+        /* Info strip */
+        .info-strip {
+            background: white;
+            border-bottom: 2px solid #e8e0d0;
+        }
+
+        .info-strip-inner {
+            max-width: 1440px;
+            margin: 0 auto;
+            padding: 0 18px;
+            display: grid;
+            grid-template-columns: 300px 1fr;
+            gap: 0;
+        }
+
+        .rules-section {
+            padding: 16px 20px 16px 0;
+            border-right: 1px solid #e8e0d0;
+        }
+
+        .info-title {
+            font-family: 'Playfair Display', serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--green);
+            margin-bottom: 10px;
+            border-bottom: 1px solid #e8e0d0;
+            padding-bottom: 6px;
+        }
+
+        .rule-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #444;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+
+        .rule-icon {
+            color: var(--gold);
+            font-size: 0.9rem;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+
+        .rule-highlight {
+            background: #fff8e6;
+            border: 1px solid var(--gold);
+            border-radius: 3px;
+            padding: 5px 8px;
+            font-size: 0.75rem;
+            color: #7a5a00;
+            margin-top: 8px;
+            line-height: 1.4;
+        }
+
+        .order-section {
+            padding: 16px 0 16px 20px;
+            overflow-x: auto;
+        }
+
+        .order-grid {
+            display: grid;
+            grid-template-columns: 60px repeat(7, 1fr);
+            gap: 2px;
+            min-width: 500px;
+        }
+
+        .order-cell {
+            text-align: center;
+            padding: 4px 2px;
+            font-size: 0.66rem;
+            border-radius: 2px;
+        }
+
+        .order-cell.round-label {
+            font-weight: 700;
+            color: #888;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .order-cell.drafter-header {
+            background: var(--green);
+            color: white;
+            font-weight: 700;
+            font-size: 0.62rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 5px 2px;
+            border-radius: 2px;
+        }
+
+        .order-cell.drafter-header.andy-h { background: var(--gold); color: var(--dark-green); }
+
+        .order-cell.pick-slot {
+            background: #f5f5f5;
+            color: #555;
+            font-size: 0.64rem;
+        }
+
+        .order-cell.pick-slot.andy-slot {
+            background: #e8fff4;
+            color: var(--dark-green);
+            font-weight: 700;
+            border: 1px solid #a8dfc4;
+        }
+
+        @media (max-width: 1050px) {
+            .container { grid-template-columns: 1fr; }
+            .info-strip-inner { grid-template-columns: 1fr; }
+            .rules-section { border-right: none; border-bottom: 1px solid #e8e0d0; padding-right: 0; }
+            .order-section { padding-left: 0; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <h1>The Masters 2026</h1>
+    <p>Fantasy Draft Tracker &nbsp;&bull;&nbsp; Augusta National &nbsp;&bull;&nbsp; April 9–12</p>
+</div>
+
+<div id="statusBar" class="status-bar">
+    <div class="pick-info">
+        <div class="pick-badge" id="pickBadge">1</div>
+        <div class="pick-details">
+            <h2 id="pickerName">Max's Pick</h2>
+            <p id="roundLabel">Round 1 of 5</p>
+            <div class="progress-bar"><div class="progress-fill" id="progressFill" style="width:0%"></div></div>
+        </div>
+    </div>
+    <div id="andyAlert" class="andy-alert" style="display:none">Your Pick, Andy!</div>
+</div>
+
+<div class="info-strip">
+    <div class="info-strip-inner">
+        <div class="rules-section">
+            <div class="info-title">Rules</div>
+            <div class="rule-item"><span class="rule-icon">&#8635;</span><span><strong>Snake draft</strong> — order reverses each round</span></div>
+            <div class="rule-item"><span class="rule-icon">&#9654;</span><span><strong>7 teams</strong>, <strong>6 picks</strong> each (42 total picks)</span></div>
+            <div class="rule-item"><span class="rule-icon">&#9660;</span><span><strong>Drop your lowest</strong> scoring pick after the tournament</span></div>
+            <div class="rule-item"><span class="rule-icon">&#9733;</span><span><strong>Best 5 combined score</strong> to par wins</span></div>
+            <div class="rule-highlight">&#9888; With the drop rule, use your 6th pick as a high-upside swing — the floor is protected.</div>
+        </div>
+        <div class="order-section">
+            <div class="info-title">Draft Order</div>
+            <div class="order-grid" id="orderGrid"></div>
+        </div>
+    </div>
+</div>
+
+<div class="container">
+    <div>
+        <div class="card">
+            <div class="card-header">Draft Board</div>
+            <div class="card-body" style="overflow-x:auto">
+                <div class="draft-board" id="draftBoard"></div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Teams</div>
+            <div class="card-body">
+                <div class="teams-grid" id="teamsGrid"></div>
+            </div>
+        </div>
+    </div>
+
+    <div>
+        <div class="card">
+            <div class="card-header">Andy's Next Pick</div>
+            <div class="card-body" id="andyPanel">
+                <div class="not-andy">Waiting for Andy's turn...</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Record Pick</div>
+            <div class="card-body">
+                <p style="font-size:0.78rem;color:#666" id="pickingFor">Picking for: <strong>Max</strong></p>
+                <div class="pick-input">
+                    <select id="playerSelect"><option value="">Select player...</option></select>
+                    <button class="btn-pick" onclick="recordPick()">Pick</button>
+                </div>
+                <button class="btn-undo" onclick="undoPick()">↩ Undo last pick</button>
+            </div>
+        </div>
+
+        <div class="card">
+            <div class="card-header">Full Field — DraftKings Odds</div>
+            <div class="filter-tabs">
+                <div class="tab active" onclick="setFilter('all',this)">All</div>
+                <div class="tab" onclick="setFilter('available',this)">Available</div>
+                <div class="tab" onclick="setFilter('targets',this)">Andy's Targets</div>
+            </div>
+            <div class="player-list" id="playerList"></div>
+            <div class="legend">
+                <div class="legend-item"><div class="tier-dot t1"></div> Tier 1</div>
+                <div class="legend-item"><div class="tier-dot t2"></div> Tier 2</div>
+                <div class="legend-item"><div class="tier-dot t3"></div> Tier 3</div>
+                <div class="legend-item"><div class="tier-dot t4"></div> Tier 4+</div>
+                <div class="legend-item"><div class="tier-dot tf"></div> Fade</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const DRAFTERS = ['Max','Mark','Andy','Joe','Lloyd','Matt','Kevin'];
+const ANDY = 2;
+const ROUNDS = 6;
+const TOTAL = DRAFTERS.length * ROUNDS;
+
+function buildOrder() {
+    const order = [];
+    for (let r = 0; r < ROUNDS; r++) {
+        const cols = [...DRAFTERS.keys()];
+        if (r % 2 === 1) cols.reverse();
+        cols.forEach(d => order.push({ d, round: r + 1, pick: order.length + 1 }));
+    }
+    return order;
+}
+
+const ORDER = buildOrder();
+const ANDY_PICKS = ORDER.filter(o => o.d === ANDY).map(o => o.pick);
+
+const PLAYERS = [
+    { name:'Scottie Scheffler', odds:'+410', tier:1, note:'2x champ, world #1', andyTarget:false, fade:false, injury:false },
+    { name:'Jon Rahm', odds:'+850', tier:2, note:'2023 champ, LIV', andyTarget:false, fade:false, injury:false },
+    { name:'Bryson DeChambeau', odds:'+1075', tier:2, note:'Trending up, power suits Augusta', andyTarget:true, fade:false, injury:false },
+    { name:'Rory McIlroy', odds:'+1150', tier:2, note:'Defending champ — repeat curse', andyTarget:false, fade:false, injury:false },
+    { name:'Ludvig Åberg', odds:'+1750', tier:3, note:'Best value in field, rising handle', andyTarget:true, fade:false, injury:false },
+    { name:'Xander Schauffele', odds:'+1850', tier:3, note:'Major champ, elite iron play', andyTarget:false, fade:false, injury:false },
+    { name:'Cameron Young', odds:'+2400', tier:3, note:'Market mover, big hitter', andyTarget:false, fade:false, injury:false },
+    { name:'Tommy Fleetwood', odds:'+2500', tier:3, note:'Classic Augusta profile, due for major', andyTarget:false, fade:false, injury:false },
+    { name:'Matt Fitzpatrick', odds:'+2600', tier:3, note:'Solid all-around ball striker', andyTarget:false, fade:false, injury:false },
+    { name:'Collin Morikawa', odds:'+3100', tier:0, note:'BACK INJURY — day by day status', andyTarget:false, fade:true, injury:true },
+    { name:'Justin Rose', odds:'+3600', tier:4, note:'2025 runner-up, Augusta specialist', andyTarget:true, fade:false, injury:false },
+    { name:'Jordan Spieth', odds:'+3800', tier:4, note:'Course fits his creativity', andyTarget:true, fade:false, injury:false },
+    { name:'Brooks Koepka', odds:'+3800', tier:4, note:'4x major champ, LIV peak performer', andyTarget:false, fade:false, injury:false },
+    { name:'Hideki Matsuyama', odds:'+3900', tier:4, note:'2021 champ, Augusta specialist', andyTarget:true, fade:false, injury:false },
+    { name:'Robert MacIntyre', odds:'+4000', tier:4, note:'Strong iron play, underrated', andyTarget:false, fade:false, injury:false },
+    { name:'Russell Henley', odds:'+4200', tier:4, note:'Elite Augusta ball-striking profile', andyTarget:true, fade:false, injury:false },
+    { name:'Chris Gotterup', odds:'+4300', tier:4, note:'Power + improving precision', andyTarget:true, fade:false, injury:false },
+    { name:'Patrick Reed', odds:'+4500', tier:4, note:'2018 champ, LIV', andyTarget:false, fade:false, injury:false },
+    { name:'Viktor Hovland', odds:'+4600', tier:0, note:'Putting struggles at Augusta', andyTarget:false, fade:true, injury:false },
+    { name:'Si Woo Kim', odds:'+4700', tier:4, note:'Solid mid-tier option', andyTarget:false, fade:false, injury:false },
+    { name:'Min Woo Lee', odds:'+5400', tier:4, note:'Athletic long hitter', andyTarget:false, fade:false, injury:false },
+    { name:'Justin Thomas', odds:'+5500', tier:4, note:'Former world #1, course fits', andyTarget:false, fade:false, injury:false },
+    { name:'Patrick Cantlay', odds:'+5700', tier:4, note:'Grinder, can go low at Augusta', andyTarget:false, fade:false, injury:false },
+    { name:'Adam Scott', odds:'+6200', tier:4, note:'2013 champ, ages well at Augusta', andyTarget:true, fade:false, injury:false },
+    { name:'Akshay Bhatia', odds:'+6600', tier:4, note:'Market mover, raw power', andyTarget:false, fade:false, injury:false },
+    { name:'Sepp Straka', odds:'+6700', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Jason Day', odds:'+6900', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Jake Knapp', odds:'+6900', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Tyrrell Hatton', odds:'+6900', tier:4, note:'LIV, feisty major competitor', andyTarget:false, fade:false, injury:false },
+    { name:'Shane Lowry', odds:'+7000', tier:4, note:'Major champ, gritty performer', andyTarget:true, fade:false, injury:false },
+    { name:'Sam Burns', odds:'+7200', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Corey Conners', odds:'+8200', tier:4, note:'Elite approach stats', andyTarget:false, fade:false, injury:false },
+    { name:'Nicolai Hojgaard', odds:'+8400', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Kurt Kitayama', odds:'+8800', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'J.J. Spaun', odds:'+8800', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Jacob Bridgeman', odds:'+9400', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Maverick McNealy', odds:'+9800', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Cameron Smith', odds:'+10000', tier:4, note:'LIV, elite short game', andyTarget:false, fade:false, injury:false },
+    { name:'Harris English', odds:'+10500', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Gary Woodland', odds:'+11000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Ben Griffin', odds:'+11000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Daniel Berger', odds:'+11000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Max Homa', odds:'+11500', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Sung-Jae Im', odds:'+12000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Rasmus Hojgaard', odds:'+13000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Keegan Bradley', odds:'+14000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Harry Hall', odds:'+16000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Marco Penge', odds:'+16000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Alex Noren', odds:'+16500', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Ryan Gerard', odds:'+17000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Nick Taylor', odds:'+19500', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Aaron Rai', odds:'+19500', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Brian Harman', odds:'+20000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Sam Stevens', odds:'+21000', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Sergio Garcia', odds:'+22500', tier:4, note:'2017 champ', andyTarget:false, fade:false, injury:false },
+    { name:'Ryan Fox', odds:'+22500', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Wyndham Clark', odds:'+22500', tier:4, note:'', andyTarget:false, fade:false, injury:false },
+    { name:'Dustin Johnson', odds:'+24000', tier:4, note:'2020 champ, LIV', andyTarget:false, fade:false, injury:false },
+    { name:'Charl Schwartzel', odds:'+60000', tier:4, note:'2011 champ', andyTarget:false, fade:false, injury:false },
+    { name:'Bubba Watson', odds:'+60000', tier:4, note:'2x champ', andyTarget:false, fade:false, injury:false },
+    { name:'Zach Johnson', odds:'+60000', tier:4, note:'2007 champ', andyTarget:false, fade:false, injury:false },
+];
+
+const RECS = {
+    3:  { primary:'Bryson DeChambeau', fallback:'Rory McIlroy',     reason:'Trending up all week — power game suits Augusta, better value than defending champ McIlroy.' },
+    12: { primary:'Ludvig Åberg',       fallback:'Justin Rose',      reason:'Åberg is the single best value in the field. If gone, Rose is 2025 runner-up and a lifelong Augusta specialist.' },
+    17: { primary:'Hideki Matsuyama',   fallback:'Jordan Spieth',    reason:'2021 champion who loves this course. Spieth if Matsuyama gone — Augusta calls to his creative short game.' },
+    26: { primary:'Russell Henley',     fallback:'Chris Gotterup',   reason:'Both have elite Augusta ball-striking profiles. Safe cut-makers with genuine top-20 upside.' },
+    31: { primary:'Adam Scott',         fallback:'Shane Lowry',      reason:'2013 champ who ages beautifully at Augusta. Lowry is a gritty major champion alternative.' },
+    40: { primary:'Akshay Bhatia',      fallback:'Tyrrell Hatton',   reason:'6th pick = free swing thanks to the drop rule. Bhatia has been moving in the market all week and his power game can go very low. High ceiling, low cost if he flames out.' },
+};
+
+let currentPick = 1;
+let picks = {};
+let drafted = {};
+let filter = 'all';
+
+function getInfo() { return ORDER[currentPick - 1]; }
+function nextAndyPick() { return ANDY_PICKS.find(p => p >= currentPick); }
+function lastName(name) { return name.split(' ').slice(-1)[0]; }
+function tierClass(p) {
+    if (p.fade) return 'tf';
+    return ['','t1','t2','t3','t4'][p.tier] || 't4';
+}
+
+function renderStatus() {
+    if (currentPick > TOTAL) {
+        document.getElementById('statusBar').innerHTML = '<div class="complete-banner">Draft Complete! Good luck at Augusta, Andy.</div>';
+        return;
+    }
+    const info = getInfo();
+    document.getElementById('pickBadge').textContent = currentPick;
+    document.getElementById('pickerName').textContent = DRAFTERS[info.d] + "'s Pick";
+    document.getElementById('roundLabel').textContent = 'Round ' + info.round + ' of 6 — Pick ' + currentPick + ' of ' + TOTAL;
+    document.getElementById('progressFill').style.width = ((currentPick - 1) / TOTAL * 100) + '%';
+    document.getElementById('andyAlert').style.display = info.d === ANDY ? 'block' : 'none';
+    document.getElementById('pickingFor').innerHTML = 'Recording pick for: <strong>' + DRAFTERS[info.d] + '</strong>';
+}
+
+function renderBoard() {
+    const board = document.getElementById('draftBoard');
+    board.innerHTML = '';
+
+    DRAFTERS.forEach((name, i) => {
+        const h = document.createElement('div');
+        h.className = 'col-header' + (i === ANDY ? ' andy' : '');
+        h.textContent = (i === ANDY ? '★ ' : '') + name;
+        board.appendChild(h);
+    });
+
+    for (let r = 0; r < ROUNDS; r++) {
+        const rowPicks = ORDER.filter(o => o.round === r + 1);
+        const map = {};
+        rowPicks.forEach(o => { map[o.d] = o; });
+
+        DRAFTERS.forEach((_, colIdx) => {
+            const pickInfo = map[colIdx];
+            const isCurrent = pickInfo && pickInfo.pick === currentPick;
+            const isAndy = colIdx === ANDY;
+            const fill = pickInfo && picks[pickInfo.pick];
+
+            const cell = document.createElement('div');
+            cell.className = 'pick-cell' +
+                (isCurrent ? ' current' : '') +
+                (isAndy ? ' andy-col' : '') +
+                (fill ? ' filled' : '');
+
+            if (pickInfo) {
+                const num = document.createElement('span');
+                num.className = 'pnum';
+                num.textContent = '#' + pickInfo.pick;
+                cell.appendChild(num);
+            }
+
+            if (fill) {
+                const p = PLAYERS.find(x => x.name === picks[pickInfo.pick].player);
+                const nm = document.createElement('div');
+                nm.className = 'pname';
+                nm.textContent = lastName(picks[pickInfo.pick].player);
+                cell.appendChild(nm);
+                if (p) {
+                    const od = document.createElement('div');
+                    od.className = 'podds';
+                    od.textContent = p.odds;
+                    cell.appendChild(od);
+                }
+            } else if (isCurrent) {
+                const el = document.createElement('div');
+                el.className = 'now-label';
+                el.textContent = 'NOW';
+                cell.appendChild(el);
+            }
+
+            board.appendChild(cell);
+        });
+    }
+}
+
+function renderAndy() {
+    const panel = document.getElementById('andyPanel');
+    const next = nextAndyPick();
+
+    if (!next) {
+        panel.innerHTML = '<div class="not-andy" style="color:var(--green);font-weight:700">Andy\'s draft is complete!</div>';
+        return;
+    }
+
+    const rec = RECS[next];
+    const away = next - currentPick;
+    const pAvail = !drafted[rec.primary];
+    const fAvail = !drafted[rec.fallback];
+    const pData = PLAYERS.find(p => p.name === rec.primary);
+    const fData = PLAYERS.find(p => p.name === rec.fallback);
+
+    let html = '';
+
+    if (away === 0) {
+        html += '<div class="rec-box">';
+        html += `<div class="rec-title">Pick #${next} — Your turn now</div>`;
+        if (pAvail) {
+            html += `<div class="rec-player">${rec.primary}</div>`;
+            html += `<div class="rec-odds">${pData ? pData.odds : ''}</div>`;
+            html += `<div class="rec-reason">${rec.reason}</div>`;
+            if (fData) {
+                html += `<div class="rec-fallback">Fallback if unavailable: <strong>${rec.fallback}</strong> ${fData.odds}</div>`;
+            }
+        } else if (fAvail) {
+            html += `<div style="font-size:0.7rem;opacity:0.7;margin-bottom:4px">${rec.primary} already taken — take fallback:</div>`;
+            html += `<div class="rec-player">${rec.fallback}</div>`;
+            html += `<div class="rec-odds">${fData ? fData.odds : ''}</div>`;
+            html += `<div class="rec-reason">${rec.reason}</div>`;
+        } else {
+            html += `<div class="rec-reason" style="opacity:1">Both targets are gone. Pick best available from the player list — filter by "Available" and look for Andy-badged options first.</div>`;
+        }
+        html += '</div>';
+    } else {
+        html += `<div class="picks-away">Next pick: <strong>#${next}</strong> &nbsp;&mdash;&nbsp; ${away} pick${away !== 1 ? 's' : ''} away</div>`;
+        html += '<div class="rec-box">';
+        html += `<div class="rec-title">Target for pick #${next}</div>`;
+        html += `<div class="rec-player ${!pAvail ? 'struck' : ''}">${rec.primary}${!pAvail ? ' (taken)' : ''}</div>`;
+        html += `<div class="rec-odds ${!pAvail ? 'struck' : ''}">${pData ? pData.odds : ''}</div>`;
+        html += `<div class="rec-fallback">Fallback: <span class="${!fAvail ? 'struck' : ''}" style="font-weight:700">${rec.fallback}${!fAvail ? ' (taken)' : ''} ${fData ? fData.odds : ''}</span></div>`;
+        html += `<div class="rec-reason" style="margin-top:8px;padding-top:8px;border-top:1px solid rgba(255,255,255,0.15)">${rec.reason}</div>`;
+        html += '</div>';
+    }
+
+    panel.innerHTML = html;
+}
+
+function renderPlayerList() {
+    const list = document.getElementById('playerList');
+    const select = document.getElementById('playerSelect');
+    list.innerHTML = '';
+    select.innerHTML = '<option value="">Select player...</option>';
+
+    const next = nextAndyPick();
+    const rec = next ? RECS[next] : null;
+
+    PLAYERS.filter(p => {
+        if (filter === 'available') return !drafted[p.name];
+        if (filter === 'targets') return p.andyTarget && !drafted[p.name];
+        return true;
+    }).forEach(p => {
+        const isDrafted = !!drafted[p.name];
+
+        const row = document.createElement('div');
+        row.className = 'p-row' +
+            (!isDrafted ? ' clickable' : '') +
+            (isDrafted ? ' drafted' : '') +
+            (p.andyTarget && !isDrafted ? ' andy-target' : '') +
+            (p.fade && !isDrafted ? ' fade' : '');
+
+        let takenBy = '';
+        if (isDrafted) {
+            const pickNum = drafted[p.name];
+            const pickData = picks[pickNum];
+            takenBy = pickData ? DRAFTERS[pickData.drafter] : '';
+        }
+
+        row.innerHTML = `
+            <div class="tier-dot ${tierClass(p)}"></div>
+            <div class="p-name">
+                <div class="p-name-main">${p.name}</div>
+                ${p.note ? `<div class="p-note">${p.note}</div>` : ''}
+            </div>
+            ${p.injury ? '<span class="badge badge-inj">Injury</span>' : ''}
+            ${p.fade && !p.injury && !isDrafted ? '<span class="badge badge-fade">Fade</span>' : ''}
+            ${p.andyTarget && !isDrafted ? '<span class="badge badge-andy">Andy</span>' : ''}
+            ${isDrafted ? `<span class="badge badge-taken">${takenBy}</span>` : ''}
+            <div class="p-odds">${p.odds}</div>
+        `;
+
+        if (!isDrafted) {
+            row.addEventListener('click', () => {
+                document.getElementById('playerSelect').value = p.name;
+            });
+        }
+
+        list.appendChild(row);
+
+        if (!isDrafted) {
+            const opt = document.createElement('option');
+            opt.value = p.name;
+            opt.textContent = p.name + ' (' + p.odds + ')';
+            select.appendChild(opt);
+        }
+    });
+}
+
+function renderTeams() {
+    const grid = document.getElementById('teamsGrid');
+    grid.innerHTML = '';
+
+    DRAFTERS.forEach((name, idx) => {
+        const teamPicks = ORDER
+            .filter(o => o.d === idx && picks[o.pick])
+            .map(o => ({
+                name: picks[o.pick].player,
+                odds: (PLAYERS.find(x => x.name === picks[o.pick].player) || {}).odds || ''
+            }));
+
+        const card = document.createElement('div');
+        card.className = 'team-card';
+        card.innerHTML = `
+            <div class="team-hdr ${idx === ANDY ? 'andy-team' : ''}">${idx === ANDY ? '★ ' : ''}${name}</div>
+            <div class="team-picks">
+                ${teamPicks.length === 0
+                    ? '<div class="team-empty">No picks yet</div>'
+                    : teamPicks.map(p => `<div class="team-pick-row"><span>${lastName(p.name)}</span><span style="color:var(--green);font-weight:600">${p.odds}</span></div>`).join('')}
+            </div>
+        `;
+        grid.appendChild(card);
+    });
+}
+
+function recordPick() {
+    if (currentPick > TOTAL) return;
+    const sel = document.getElementById('playerSelect');
+    const player = sel.value;
+    if (!player) return;
+    const info = getInfo();
+    picks[currentPick] = { player, drafter: info.d };
+    drafted[player] = currentPick;
+    currentPick++;
+    refresh();
+}
+
+function undoPick() {
+    if (currentPick <= 1) return;
+    currentPick--;
+    const p = picks[currentPick];
+    if (p) { delete drafted[p.player]; delete picks[currentPick]; }
+    refresh();
+}
+
+function setFilter(f, el) {
+    filter = f;
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    el.classList.add('active');
+    renderPlayerList();
+}
+
+function renderOrderGrid() {
+    const grid = document.getElementById('orderGrid');
+    grid.innerHTML = '';
+
+    // Header row: empty corner + drafter names
+    const corner = document.createElement('div');
+    corner.className = 'order-cell round-label';
+    grid.appendChild(corner);
+
+    DRAFTERS.forEach((name, i) => {
+        const h = document.createElement('div');
+        h.className = 'order-cell drafter-header' + (i === ANDY ? ' andy-h' : '');
+        h.textContent = i === ANDY ? '★' + name : name;
+        grid.appendChild(h);
+    });
+
+    // One row per round
+    for (let r = 0; r < ROUNDS; r++) {
+        const rowPicks = ORDER.filter(o => o.round === r + 1);
+        const map = {};
+        rowPicks.forEach(o => { map[o.d] = o; });
+
+        const rl = document.createElement('div');
+        rl.className = 'order-cell round-label';
+        rl.textContent = 'R' + (r + 1);
+        grid.appendChild(rl);
+
+        DRAFTERS.forEach((_, colIdx) => {
+            const pickInfo = map[colIdx];
+            const cell = document.createElement('div');
+            const isAndy = colIdx === ANDY;
+            cell.className = 'order-cell pick-slot' + (isAndy ? ' andy-slot' : '');
+            cell.textContent = pickInfo ? '#' + pickInfo.pick : '';
+            grid.appendChild(cell);
+        });
+    }
+}
+
+function refresh() {
+    renderStatus();
+    renderBoard();
+    renderPlayerList();
+    renderAndy();
+    renderTeams();
+}
+
+renderOrderGrid();
+refresh();
+</script>
+</body>
+</html>
